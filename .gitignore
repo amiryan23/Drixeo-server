@@ -1,0 +1,12 @@
+# Node.js
+node_modules/
+npm-debug.log
+.env
+
+# Директории/файлы IDE
+.idea/
+.vscode/
+.DS_Store
+
+# Логи
+*.log
