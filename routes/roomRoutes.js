@@ -59,7 +59,6 @@ router.post('/create-room', authenticateJWT, (req, res) => {
         return res.status(500).json({ error: 'Ошибка при создании комнаты' });
       }
 
-      const createdAtUTC = new Date().toISOString();
 
       const sqlInsert = `
         INSERT INTO rooms (owner, roomId, description, members, videoLink, blocked, chatRoom, \`limit\`, is_public , createdTime)
