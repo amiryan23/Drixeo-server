@@ -12,7 +12,6 @@ router.post('/create-room', authenticateJWT, (req, res) => {
     return res.status(400).json({ error: 'Пожалуйста, укажите все необходимые данные' });
   }
 
-
   const sqlUserData = 'SELECT is_premium, lastRoomCreation FROM users WHERE userId = ?';
   db.query(sqlUserData, [userId], (err, results) => {
     if (err) {
@@ -33,9 +32,13 @@ router.post('/create-room', authenticateJWT, (req, res) => {
     }
 
     if (lastRoomCreation) {
-      const lastCreatedAt = new Date(lastRoomCreation);
-      const now = new Date();
-      const diffMinutes = (now - lastCreatedAt) / 1000 / 60;
+  const lastCreatedAt = new Date(lastRoomCreation + 'Z');
+  const nowUTC = new Date(); 
+
+    console.log('Last Created At (UTC):', lastCreatedAt.toISOString());
+  console.log('Now (UTC):', nowUTC.toISOString());
+
+  const diffMinutes = (nowUTC.getTime() - lastCreatedAt.getTime()) / 1000 / 60;
 
       if (diffMinutes < 30) {
         return res.status(400).json({ remainingMinutes: Math.ceil(30 - diffMinutes) });
@@ -59,18 +62,20 @@ router.post('/create-room', authenticateJWT, (req, res) => {
         return res.status(500).json({ error: 'Ошибка при создании комнаты' });
       }
 
+      const createdAtUTC = new Date().toISOString();
+
       const sqlInsert = `
-        INSERT INTO rooms (owner, roomId, description, members, videoLink, blocked, chatRoom, \`limit\`, is_public)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO rooms (owner, roomId, description, members, videoLink, blocked, chatRoom, \`limit\`, is_public , createdTime)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
-      db.query(sqlInsert, [userId, roomId, description, '[]', videoLink, '[]', '[]', limit, is_public], (err) => {
+      db.query(sqlInsert, [userId, roomId, description, '[]', videoLink, '[]', '[]', limit, is_public,createdAtUTC], (err) => {
         if (err) {
           console.error('Ошибка при создании комнаты:', err);
           return res.status(500).json({ error: 'Ошибка при создании комнаты' });
         }
 
-        const sqlUpdateTime = 'UPDATE users SET lastRoomCreation = NOW() WHERE userId = ?';
+        const sqlUpdateTime = 'UPDATE users SET lastRoomCreation = UTC_TIMESTAMP() WHERE userId = ?';
         db.query(sqlUpdateTime, [userId], (err) => {
           if (err) {
             console.error('Ошибка при обновлении времени последнего создания комнаты:', err);

@@ -132,12 +132,14 @@ router.post('/update-premium', authenticateJWT , async (req, res) => {
 
       console.log(`Премиум подписка успешно обновлена для пользователя ${userId}.`);
 
+      const currentUTC = new Date().toISOString();
+
       const insertPaymentQuery = `
-        INSERT INTO payments (senderId, receiverId, giftName, forStars )
-        VALUES (?, ?, ?, ?)
+        INSERT INTO payments (senderId, receiverId, giftName, forStars , currentTime )
+        VALUES (?, ?, ?, ?, ?)
       `;
 
-      const paymentData = [userId, userId, `Premium${months}`, price];
+      const paymentData = [userId, userId, `Premium${months}`, price , currentUTC];
 
       db.query(insertPaymentQuery, paymentData, (paymentErr) => {
         if (paymentErr) {

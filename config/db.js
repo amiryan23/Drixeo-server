@@ -5,7 +5,8 @@ const urlDB = `mysql://${process.env.MYSQLUSER}:${process.env.MYSQLPASSWORD}@${p
 
 
 const db = mysql2.createConnection(urlDB);
-// const db = mysql.createConnection({
+
+// const db = mysql2.createConnection({
 //   host: process.env.TEST_DB_HOST,
 //   user: process.env.TEST_DB_USER,
 //   password: '',

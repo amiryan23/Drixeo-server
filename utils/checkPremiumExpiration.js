@@ -13,7 +13,7 @@ const checkPremiumExpiration = () => {
     result.forEach((user) => {
       const expirationDate = new Date(user.premium_expires_at);
 
-      if (currentDate >= expirationDate) {
+      if (currentDate.getTime() >= expirationDate.getTime()) {
         
         const updateQuery = `
           UPDATE users
