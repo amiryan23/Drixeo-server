@@ -743,13 +743,11 @@ const newPremiumDate = new Date(Date.UTC(
 
       console.log(`Premium gifted successfully to user ${receiverId} by user ${senderId}.`);
 
-      const currentUTC = new Date().toISOString();
-
       const insertPaymentQuery = `
         INSERT INTO payments (giftName, senderId, receiverId, forStars , currentTime)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, UTC_TIMESTAMP())
       `;
-      db.query(insertPaymentQuery, [`Premium${months}`, senderId, receiverId, price , currentUTC], (paymentErr) => {
+      db.query(insertPaymentQuery, [`Premium${months}`, senderId, receiverId, price ], (paymentErr) => {
         if (paymentErr) {
           console.error("Error inserting payment record:", paymentErr);
           return;
@@ -908,13 +906,12 @@ const newPremiumDate = new Date(Date.UTC(
 
         console.log(`Premium gifted successfully to user ${receiverId} by admin ${senderId}.`);
 
-        const currentUTC = new Date().toISOString();
 
         const insertPaymentQuery = `
           INSERT INTO payments (giftName, senderId, receiverId, forStars , currentTime)
-          VALUES (?, ?, ?, ? , ?)
+          VALUES (?, ?, ?, ? , UTC_TIMESTAMP())
         `;
-        db.query(insertPaymentQuery, [`Premium ${months} months`, senderId, receiverId, 0 , currentUTC], (paymentErr) => {
+        db.query(insertPaymentQuery, [`Premium ${months} months`, senderId, receiverId, 0 ], (paymentErr) => {
           if (paymentErr) {
             console.error("Error inserting payment record:", paymentErr);
             return;
@@ -1059,19 +1056,17 @@ socket.on('sendGift', ({ senderId, receiverId, gift, roomId }) => {
         console.log(`User ${senderId} exp updated by ${giftExp}.`);
       });
 
-      const currentUTC = new Date().toISOString();
 
       const insertPaymentQuery = `
         INSERT INTO payments (giftName, senderId, receiverId, forStars, forPoints , currentTime)
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, UTC_TIMESTAMP())
       `;
       const paymentData = [
         gift.name,
         senderId,
         receiverId,
         gift.price || null, 
-        gift?.forPoints || null,
-        currentUTC
+        gift?.forPoints || null
       ];
 
       db.query(insertPaymentQuery, paymentData, (paymentErr) => {
@@ -1226,19 +1221,17 @@ socket.on('sendGiftAdmin', ({ senderId, receiverId, gift, roomId }) => {
 
         console.log(`Gift sent successfully from admin ${senderId} to user ${receiverId}.`);
 
-        const currentUTC = new Date().toISOString();
 
         const insertPaymentQuery = `
           INSERT INTO payments (giftName, senderId, receiverId, forStars, forPoints , currentTime)
-          VALUES (?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, UTC_TIMESTAMP())
         `;
         const paymentData = [
           gift.name,
           senderId,
           receiverId,
           0, 
-          0, 
-          currentUTC
+          0
         ];
 
         db.query(insertPaymentQuery, paymentData, (paymentErr) => {

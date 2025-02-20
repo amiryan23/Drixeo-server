@@ -49,13 +49,12 @@ const authController = {
           photo_url: photo_url || null,
           points: 0,
           gifts: '[]', 
-          custom_settings: '{}',
-          created_at: new Date().toISOString()
+          custom_settings: '{}'
         };
 
         db.query(
-          'INSERT INTO users (userId, username, first_name, last_name, photo_url, points, gifts, custom_settings, created_at) VALUES (?, ?, ?, ?, ?, ? , ? , ?, ?)',
-          [newUser.userId, newUser.username, newUser.first_name, newUser.last_name, newUser.photo_url, newUser.points, newUser.gifts, newUser.custom_settings, newUser.created_at],
+          'INSERT INTO users (userId, username, first_name, last_name, photo_url, points, gifts, custom_settings, created_at) VALUES (?, ?, ?, ?, ?, ? , ? , ?, UTC_TIMESTAMP())',
+          [newUser.userId, newUser.username, newUser.first_name, newUser.last_name, newUser.photo_url, newUser.points, newUser.gifts, newUser.custom_settings],
           (err) => {
             if (err) return res.status(500).json({ error: 'Error saving user' });
             const token = jwt.sign({ userId: newUser.userId }, process.env.SECRET_KEY_JWT, { expiresIn: '3h' });

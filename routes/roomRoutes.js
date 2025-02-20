@@ -35,9 +35,6 @@ router.post('/create-room', authenticateJWT, (req, res) => {
   const lastCreatedAt = new Date(lastRoomCreation + 'Z');
   const nowUTC = new Date(); 
 
-    console.log('Last Created At (UTC):', lastCreatedAt.toISOString());
-  console.log('Now (UTC):', nowUTC.toISOString());
-
   const diffMinutes = (nowUTC.getTime() - lastCreatedAt.getTime()) / 1000 / 60;
 
       if (diffMinutes < 30) {
@@ -66,10 +63,10 @@ router.post('/create-room', authenticateJWT, (req, res) => {
 
       const sqlInsert = `
         INSERT INTO rooms (owner, roomId, description, members, videoLink, blocked, chatRoom, \`limit\`, is_public , createdTime)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())
       `;
 
-      db.query(sqlInsert, [userId, roomId, description, '[]', videoLink, '[]', '[]', limit, is_public,createdAtUTC], (err) => {
+      db.query(sqlInsert, [userId, roomId, description, '[]', videoLink, '[]', '[]', limit, is_public], (err) => {
         if (err) {
           console.error('Ошибка при создании комнаты:', err);
           return res.status(500).json({ error: 'Ошибка при создании комнаты' });
