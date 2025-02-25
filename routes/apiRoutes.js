@@ -237,4 +237,33 @@ router.post("/get-sender-details", authenticateJWT , (req, res) => {
   });
 });
 
+
+router.get('/search', async (req, res) => {
+  const { query } = req.query; 
+
+  if (!query) {
+    return res.status(400).json({ error: 'Пожалуйста, укажите поисковый запрос' });
+  }
+
+  try {
+    const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+      params: {
+        part: 'snippet',
+        q: query,
+        maxResults:15,
+        type: 'video',
+        key: process.env.SECRET_KEY_YOUTUBE,
+      }
+    });
+
+    res.json(response.data.items);
+  } catch (error) {
+    console.error('Ошибка при запросе к YouTube API:', error);
+    res.status(500).json({ error: 'Ошибка при запросе к YouTube API' });
+  }
+});
+
+
+
+
 module.exports = router;
