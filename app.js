@@ -4,6 +4,7 @@ const cors = require('cors');
 const http = require('http');
 const authRoutes = require('./routes/authRoutes');
 const roomRoutes = require('./routes/roomRoutes');
+const tasksRoutes = require('./routes/tasksRoutes')
 const db = require('./config/db');
 const socketHandler = require('./socket');
 const userSettingsRoute = require('./routes/userSettingsRoute');
@@ -27,6 +28,7 @@ app.use('/auth', authRoutes);
 app.use('/rooms', roomRoutes);
 app.use('/user', userSettingsRoute);
 app.use('/api', apiRoutes);
+app.use("/tasks", tasksRoutes);
 
 
 let bot = new Telegraf(process.env.BOT_TOKEN)
