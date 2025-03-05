@@ -1325,6 +1325,11 @@ socket.on('sendGiftAdmin', ({ senderId, receiverId, gift, roomId }) => {
   });
 });
 
+
+  socket.on('send_emoji', ({ emoji, roomId, sender }) => {
+    io.to(roomId).emit('receive_emoji', { emoji, sender });
+  });
+
  socket.on('leaveRoom', ({ roomId, userId }) => {
     console.log(`Пользователь ${userId} покидает комнату ${roomId}`);
 
