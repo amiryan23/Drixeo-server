@@ -1326,8 +1326,8 @@ socket.on('sendGiftAdmin', ({ senderId, receiverId, gift, roomId }) => {
 });
 
 
-  socket.on('send_emoji', ({ emoji, roomId, sender }) => {
-    io.to(roomId).emit('receive_emoji', { emoji, sender });
+  socket.on('send_emoji', ({ emoji, roomId, sender , id }) => {
+    io.to(roomId).emit('receive_emoji', { emoji, sender , id });
   });
 
  socket.on('leaveRoom', ({ roomId, userId }) => {
