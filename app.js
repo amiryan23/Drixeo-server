@@ -13,17 +13,21 @@ const checkPremiumExpiration = require('./utils/checkPremiumExpiration')
 const apiRoutes = require('./routes/apiRoutes');
 const cron = require('node-cron');
 const { Telegraf } = require("telegraf");
+const path = require("path");
+
 
 const app = express();
 
 app.use(cors({
   origin: "https://drixeo.netlify.app", 
-  methods: ["GET", "POST" , "PUT"],
+  methods: ["GET", "POST" , "PUT" , "DELETE"],
 }));
 app.use(express.json());
 const server = http.createServer(app);
 
 socketHandler(server, db);
+
+
 
 app.use('/auth', authRoutes);
 app.use('/rooms', roomRoutes);
@@ -31,6 +35,7 @@ app.use('/user', userSettingsRoute);
 app.use('/api', apiRoutes);
 app.use("/tasks", tasksRoutes);
 app.use('/stickers', stickersRoutes);
+// app.use(`/uploads`, express.static(path.join(__dirname,"uploads")));
 
 
 let bot = new Telegraf(process.env.BOT_TOKEN)

@@ -3,6 +3,9 @@ const axios = require('axios');
 const db = require('../config/db');
 const { authenticateJWT } = require('../utils/utils');
 const {decryptData} = require('../utils/encryptData')
+const path = require("path");
+const fs = require("fs");
+const multer = require ("multer");
 
 const router = express.Router();
 
@@ -262,6 +265,65 @@ router.get('/search', async (req, res) => {
     res.status(500).json({ error: 'Ошибка при запросе к YouTube API' });
   }
 });
+
+
+// const uploadDir = path.join(__dirname,"..", "uploads");
+// if (!fs.existsSync(uploadDir)) {
+//   fs.mkdirSync(uploadDir, { recursive: true });
+// }
+
+// 
+// const MAX_FILE_SIZE = 500 * 1024 * 1024;
+// 
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, "uploads/");
+//   },
+//   filename: (req, file, cb) => {
+//     const ext = path.extname(file.originalname);
+//     const filename = `${Date.now()}${ext}`;
+//     cb(null, filename);
+//   },
+// });
+// const upload = multer({ 
+//   storage,
+//   limits: { fileSize: MAX_FILE_SIZE }
+//    });
+
+
+// router.post("/upload", authenticateJWT, (req, res, next) => {
+//   upload.single("video")(req, res, (err) => {
+//     if (err) {
+//       if (err.code === "LIMIT_FILE_SIZE") {
+//         return res.status(400).json({ error: "Размер файла не должен превышать 500MB!" });
+//       }
+//       return res.status(500).json({ error: "Ошибка при загрузке файла" });
+//     }
+// 
+//     if (!req.file) return res.status(400).json({ error: "Файл не загружен" });
+// 
+//     const videoUrl = `http://localhost/uploads/${req.file.filename}`;
+//     res.json({ videoUrl });
+//   });
+// });
+
+// router.delete("/delete/:filename", authenticateJWT, (req, res) => {
+//   const { filename } = req.params;
+//   const filePath = path.join(__dirname, "..", "uploads", filename);
+// 
+//   if (!fs.existsSync(filePath)) {
+//     return res.status(404).json({ error: "Файл не найден" });
+//   }
+// 
+//   fs.unlink(filePath, (err) => {
+//     if (err) {
+//       console.error("Ошибка при удалении файла:", err);
+//       return res.status(500).json({ error: "Ошибка при удалении файла" });
+//     }
+// 
+//     res.json({ message: "Файл успешно удалён" });
+//   });
+// });
 
 
 
