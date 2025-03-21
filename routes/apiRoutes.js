@@ -267,65 +267,161 @@ router.get('/search', async (req, res) => {
 });
 
 
-// const uploadDir = path.join(__dirname,"..", "uploads");
-// if (!fs.existsSync(uploadDir)) {
-//   fs.mkdirSync(uploadDir, { recursive: true });
-// }
-
-// 
-// const MAX_FILE_SIZE = 500 * 1024 * 1024;
-// 
-// const storage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     cb(null, "uploads/");
-//   },
-//   filename: (req, file, cb) => {
-//     const ext = path.extname(file.originalname);
-//     const filename = `${Date.now()}${ext}`;
-//     cb(null, filename);
-//   },
-// });
-// const upload = multer({ 
-//   storage,
-//   limits: { fileSize: MAX_FILE_SIZE }
-//    });
+const uploadDir = path.join(__dirname,"..", "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 
-// router.post("/upload", authenticateJWT, (req, res, next) => {
-//   upload.single("video")(req, res, (err) => {
-//     if (err) {
-//       if (err.code === "LIMIT_FILE_SIZE") {
-//         return res.status(400).json({ error: "Размер файла не должен превышать 500MB!" });
-//       }
-//       return res.status(500).json({ error: "Ошибка при загрузке файла" });
-//     }
-// 
-//     if (!req.file) return res.status(400).json({ error: "Файл не загружен" });
-// 
-//     const videoUrl = `http://localhost/uploads/${req.file.filename}`;
-//     res.json({ videoUrl });
-//   });
-// });
+router.post("/upload", authenticateJWT, (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res.status(400).json({ error: "userId не передан!" });
+  }
 
-// router.delete("/delete/:filename", authenticateJWT, (req, res) => {
-//   const { filename } = req.params;
-//   const filePath = path.join(__dirname, "..", "uploads", filename);
-// 
-//   if (!fs.existsSync(filePath)) {
-//     return res.status(404).json({ error: "Файл не найден" });
-//   }
-// 
-//   fs.unlink(filePath, (err) => {
-//     if (err) {
-//       console.error("Ошибка при удалении файла:", err);
-//       return res.status(500).json({ error: "Ошибка при удалении файла" });
-//     }
-// 
-//     res.json({ message: "Файл успешно удалён" });
-//   });
-// });
+  db.query("SELECT is_premium FROM users WHERE userId = ?", [userId], (err, results) => {
+    if (err) {
+      console.error("Ошибка при запросе к БД:", err);
+      return res.status(500).json({ error: "Ошибка сервера" });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: "Пользователь не найден!" });
+    }
+
+    const isPremium = results[0].is_premium;
+    const MAX_FILE_SIZE = isPremium ? 1000 * 1024 * 1024 : 500 * 1024 * 1024;
+
+    const storage = multer.diskStorage({
+      destination: (req, file, cb) => {
+        cb(null, "uploads/"); 
+      },
+      filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        const filename = `${Date.now()}${ext}`; 
+        cb(null, filename); 
+      },
+    });
+
+    const upload = multer({ storage, limits: { fileSize: MAX_FILE_SIZE } }).single("video");
+
+    upload(req, res, (err) => {
+      if (err) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({ error: `Файл превышает допустимый размер (${MAX_FILE_SIZE / (1024 * 1024)}MB)!` });
+        }
+        return res.status(500).json({ error: "Ошибка при загрузке файла" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: "Файл не загружен!" });
+      }
+
+      res.json({ filename: req.file.filename });
+    });
+  });
+});
 
 
+router.get("/video/:filename", authenticateJWT, (req, res) => {
+  const { filename } = req.params;
+  const filePath = path.resolve(__dirname, "..", "uploads", filename);
+
+  console.log("File path:", filePath); 
+
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.error("Ошибка доступа к файлу:", err);
+      return res.status(404).json({ error: "Видео не найдено!" });
+    }
+
+    console.log("Файл найден, отправляем...");
+    res.sendFile(filePath);
+  });
+});
+
+router.delete("/delete/:filename", authenticateJWT, (req, res) => {
+  const { filename } = req.params;
+  const filePath = path.join(__dirname, "..", "uploads", filename);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: "Файл не найден" });
+  }
+
+  fs.unlink(filePath, (err) => {
+    if (err) {
+      console.error("Ошибка при удалении файла:", err);
+      return res.status(500).json({ error: "Ошибка при удалении файла" });
+    }
+
+    res.json({ message: "Файл успешно удалён" });
+  });
+});
+
+router.post('/sell-gift', (req, res) => {
+  const { userId, giftId } = req.body;
+
+  if (!userId || !giftId) {
+    return res.status(400).json({ error: 'Необходимо указать userId и giftId' });
+  }
+
+  const getGiftQuery = 'SELECT * FROM users WHERE userId = ?';
+  db.query(getGiftQuery, [userId], (err, userResults) => {
+    if (err) {
+      return res.status(500).json({ error: 'Ошибка при получении данных пользователя' });
+    }
+
+    const user = userResults[0];
+
+    let gifts = [];
+    try {
+      
+      gifts = JSON.parse(user.gifts);
+    } catch (error) {
+      return res.status(500).json({ error: 'Ошибка при парсинге данных о подарках' });
+    }
+
+    const gift = gifts.find(g => g.id === giftId);
+
+    if (!gift) {
+      return res.status(404).json({ error: 'Подарок не найден' });
+    }
+
+    if (gift.is_selled) {
+      return res.status(400).json({ error: 'Подарок уже продан' });
+    }
+
+    
+    if (!gift.hasOwnProperty('is_selled')) {
+      gift.is_selled = false; 
+    }
+
+    const discountPrice = Math.round(gift.price * 0.8);  
+
+    const updatePointsQuery = 'UPDATE users SET points = points + ? WHERE userId = ?';
+    db.query(updatePointsQuery, [discountPrice, userId], (err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Ошибка при обновлении очков пользователя' });
+      }
+
+    
+      const giftIndex = gifts.findIndex(g => g.id === giftId);
+
+  
+      gifts[giftIndex].is_selled = true;
+
+     
+      const updateGiftQuery = 'UPDATE users SET gifts = ? WHERE userId = ?';
+      db.query(updateGiftQuery, [JSON.stringify(gifts), userId], (err) => {
+        if (err) {
+          return res.status(500).json({ error: 'Ошибка при обновлении статуса подарка' });
+        }
+
+        res.status(200).json({ message: 'Подарок успешно продан', pointsAdded: discountPrice });
+      });
+    });
+  });
+});
 
 
 module.exports = router;
