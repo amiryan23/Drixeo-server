@@ -322,21 +322,34 @@ router.post("/upload", authenticateJWT, (req, res) => {
   });
 });
 
-
 router.get("/video/:filename", authenticateJWT, (req, res) => {
   const { filename } = req.params;
   const filePath = path.resolve(__dirname, "..", "uploads", filename);
 
-  console.log("File path:", filePath); 
-
-  fs.access(filePath, fs.constants.F_OK, (err) => {
-    if (err) {
-      console.error("Ошибка доступа к файлу:", err);
+  fs.stat(filePath, (err, stats) => {
+    if (err || !stats.isFile()) {
       return res.status(404).json({ error: "Видео не найдено!" });
     }
 
-    console.log("Файл найден, отправляем...");
-    res.sendFile(filePath);
+    const fileSize = stats.size;
+    const range = req.headers.range;
+
+    if (!range) {
+      return res.status(400).send("Требуется заголовок Range для стриминга!");
+    }
+
+    const [start, end] = range.replace(/bytes=/, "").split("-").map(Number);
+    const chunkStart = start || 0;
+    const chunkEnd = end ? Math.min(end, fileSize - 1) : fileSize - 1;
+
+    res.status(206);
+    res.setHeader("Content-Range", `bytes ${chunkStart}-${chunkEnd}/${fileSize}`);
+    res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("Content-Length", chunkEnd - chunkStart + 1);
+    res.setHeader("Content-Type", "video/mp4");
+
+    const stream = fs.createReadStream(filePath, { start: chunkStart, end: chunkEnd });
+    stream.pipe(res);
   });
 });
 
