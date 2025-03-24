@@ -35,7 +35,7 @@ app.use('/user', userSettingsRoute);
 app.use('/api', apiRoutes);
 app.use("/tasks", tasksRoutes);
 app.use('/stickers', stickersRoutes);
-
+app.use("/uploads", express.static("uploads"));
 
 
 let bot = new Telegraf(process.env.BOT_TOKEN)

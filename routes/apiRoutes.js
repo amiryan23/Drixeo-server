@@ -267,58 +267,37 @@ router.get('/search', async (req, res) => {
 });
 
 
-const uploadDir = path.join(__dirname,"..", "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = "uploads/";
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const filename = `${Date.now()}${ext}`;
+    cb(null, filename);
+  },
+});
 
+const upload = multer({ storage });
 
-router.post("/upload", authenticateJWT, (req, res) => {
+router.post("/upload", authenticateJWT, upload.single("video"), (req, res) => {
   const { userId } = req.query;
-  if (!userId) {
-    return res.status(400).json({ error: "userId не передан!" });
-  }
+  if (!userId) return res.status(400).json({ error: "userId не передан!" });
 
   db.query("SELECT is_premium FROM users WHERE userId = ?", [userId], (err, results) => {
     if (err) {
-      console.error("Ошибка при запросе к БД:", err);
+      console.error("Ошибка БД:", err);
       return res.status(500).json({ error: "Ошибка сервера" });
     }
 
-    if (results.length === 0) {
-      return res.status(404).json({ error: "Пользователь не найден!" });
-    }
+    if (results.length === 0) return res.status(404).json({ error: "Пользователь не найден!" });
 
-    const isPremium = results[0].is_premium;
-    const MAX_FILE_SIZE = isPremium ? 1000 * 1024 * 1024 : 500 * 1024 * 1024;
+    if (!req.file) return res.status(400).json({ error: "Файл не загружен!" });
 
-    const storage = multer.diskStorage({
-      destination: (req, file, cb) => {
-        cb(null, "uploads/"); 
-      },
-      filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname);
-        const filename = `${Date.now()}${ext}`; 
-        cb(null, filename); 
-      },
-    });
-
-    const upload = multer({ storage, limits: { fileSize: MAX_FILE_SIZE } }).single("video");
-
-    upload(req, res, (err) => {
-      if (err) {
-        if (err.code === "LIMIT_FILE_SIZE") {
-          return res.status(400).json({ error: `Файл превышает допустимый размер (${MAX_FILE_SIZE / (1024 * 1024)}MB)!` });
-        }
-        return res.status(500).json({ error: "Ошибка при загрузке файла" });
-      }
-
-      if (!req.file) {
-        return res.status(400).json({ error: "Файл не загружен!" });
-      }
-
-      res.json({ filename: req.file.filename });
-    });
+    const videoUrl = `${process.env.SERVER_URL}/uploads/${req.file.filename}`;
+    res.json({ videoUrl });
   });
 });
 
